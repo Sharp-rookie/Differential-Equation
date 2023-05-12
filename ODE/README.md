@@ -1,11 +1,17 @@
-## Finite Difference Method（FDM）
+# Finite Difference Method（FDM）
 
-> 对微分方程中的微分项进行差分近似，把原方程转化代数方程组求解
+> 把变量空间按步长$\Delta x$划分为有限格，从而对微分方程中的微分项进行差分近似，把原方程离散化为代数方程组求解
 >
-> 1. Euler法：用一阶微分近似
-> 2. Runge-Kutta法：用泰勒展开近似
+> 1. Euler法：用一阶微分项近似导数项
+> 2. Runge-Kutta法：用泰勒展开中的p阶微分项加权近似导数项
 
-### Euler法：一阶常微分方程
+
+
+## 一阶常微分方程
+
+### Euler法
+
+> 参考：[微分方程数值求解——有限差分法](https://zhuanlan.zhihu.com/p/411798670)
 
 **基本用法**
 $$
@@ -35,7 +41,7 @@ $$
     \end{aligned}
 \right.
 $$
-其中，$x_i = a + i\Delta x$。方程1转化为$(N)\times(N)$阶矩阵形式：
+其中，$x_i = a + i\Delta x$。方程1可以转化为$N \times N$阶矩阵形式：
 $$
 Au=F: \quad\quad\quad 
 	\begin{bmatrix}
@@ -85,8 +91,7 @@ Au=F: \quad\quad\quad
 	\end{Bmatrix}
 $$
 
-
-该方程组含有$N+1$个方程，$N$个未知数，满秩刚好有唯一解，即为原微分方程在离散格点处的数值解。矩阵$A$满秩，因此可逆，方程解为：$u=A^{-1}F$。
+该方程组含有$N+1$个方程，$N$个未知数，有唯一解，即为原微分方程在离散格点处的数值解。矩阵$A$满秩，因此可逆，方程解为：$u=A^{-1}F$。
 
 > 验证，取$c(x)=1$，$f(x)=sin(x)+cos(x)$，$x \in [0,2\pi]$，$u(0)=0$：
 > $$
@@ -98,8 +103,6 @@ $$
 > \right.
 > $$
 > 该方程的解析解为$u(x)=sin(x)$，代码见`Euler1.py`.
-
-
 
 **误差分析**
 
@@ -128,63 +131,133 @@ $$
 
 
 
-### Runge-Kutta法：一阶常微分方程
+### Runge-Kutta法
 
+> 参考：[常(偏)微分方程的数值求解（欧拉法、改进欧拉法、龙格-库塔法、亚当姆斯法）](https://zhuanlan.zhihu.com/p/435769998)
+
+**方程形式**
+$$
+\left\{
+	\begin{aligned}
+	u'(x) &= f(x, u), \quad x \in [a,b] \\
+	u(x_0) &= u_0
+	\end{aligned}
+\right.
+$$
 **基本用法**
 
-为了进一步探索降低误差的潜力，即尽可能使误差是$\Delta x$的高阶小量，对求解对象$u(t+\tau)$做泰勒展开来观察：
+为了进一步探索降低误差的潜力，即尽可能使误差是$\Delta x$的高阶小量，对求解对象$u(x+\Delta x)$做泰勒展开来观察：
 $$
 \begin{aligned}
 	u(x+\Delta x) &= u(x) + \Delta xu'(x) + \frac{(\Delta x)^2}{2}u''(x) + ... + \frac{(\Delta x)^p}{p!}y^{(p)}(x) + \mathcal{O}((\Delta x)^{p+1}) \\
-	&= u(x) + \Delta x \phi(x) + \mathcal{O}((\Delta x)^{p+1})
+	&= u(x) + \phi(x) + \mathcal{O}((\Delta x)^{p+1})
 \end{aligned}
 $$
 $\phi(x)$就是满足单步误差为$\Delta x$的$p+1$阶小量的差分近似值（累积误差为$p$阶），对应$p$阶Runge-Kutta法。
 
-示例
-$$
-\left\{
-	\begin{aligned}
-		u'(x)+c(x)u(x) &= f(x), \quad x \in [a,b] \\
-		u(a) &= d
-	\end{aligned}
-\right.
-$$
 
 
-**一阶Runge-Kutta法（==Euler法）**
+#### 一阶Runge-Kutta法（即Euler法）
+
 $$
 \begin{aligned}
 	u(x+\Delta x) &= u(x) + \Delta xu'(x) + \mathcal{O}((\Delta x)^2) \\
-	\phi(x) &\approx u'(x)
+	\phi(x) &= \Delta x u'(x)
 \end{aligned}
 $$
-这里$\phi(x)$等于一阶微分$u'(x)$的近似，即Euler法中的差分：
+对一阶微分$u'(x)$取近似，即Euler法中的差分：
 $$
 \left\{        
 	\begin{aligned}
-    	u'(x) \approx \phi(x) = \frac{u(x+\Delta x)-u(x)}{\Delta x}
+    	u'(x) \approx \phi(x) = \Delta x \frac{u(x+\Delta x)-u(x)}{\Delta x}
     \end{aligned}
 \right.
 $$
-通过从$u_1$到$u_{N-1}$单步迭代，逐步把公式13和上步的$u(x_i)$带入方程10，解出$u(x_{i+1})$。
+差分的离散形式为：
 $$
 \begin{aligned}
     u'_i = \frac{u(x_{i+1})-u(x_{i})}{\Delta x}, \quad i=0,1,2,...,N-1
 \end{aligned}
 $$
 
+从$u(x_0)$到$u(x_{N-1})$进行单步迭代，可解出所有$u(x_{i})$：
+$$
+\left\{
+	\begin{aligned}
+	u(x_{i+1}) &= u(x_i)+\Delta x K_1 \\
+	K_1 &= f(x_i, u(x_i))
+	\end{aligned}
+\right.
+$$
+
+
+#### 二阶Runge-Kutta法（即改进的Euler法）
+
+近似到2阶误差：
+$$
+\begin{aligned}
+	u(x+\Delta x) &= u(x) + \Delta xu'(x) + \frac{{\Delta x}^2}{2!}u''(x) + \mathcal{O}((\Delta x)^3) \\
+	\phi(x) &= \Delta xu'(x) + \frac{{\Delta x}^2}{2!}u''(x)
+\end{aligned}
+$$
+其中，$u''(x_i)=\frac{u'(x_i+\Delta x) - u'(x_i)}{\Delta x}$，所以：
+$$
+\phi(x_i) &= \Delta x u'(x_i) + \frac{\Delta x}{2}(u'(x_i+\Delta x) - u'(x_i)) \\
+&= \frac{\Delta x}{2}(u'(x_i) + u'(x_i+\Delta x))
+$$
+先根据公式14中的离散形式差分计算$u'(x_i)$，然后就能代入计算$u'(x_i+\Delta x)$：
+$$
+\left\{
+	\begin{aligned}
+	u'(x_i+\Delta x) = f(x_i+\Delta x, u(x_i+\Delta x)) = f(x_i + \Delta x, u(x_i)+\Delta x u'(x_i))
+	\end{aligned}
+\right.
+$$
+从$u(x_0)$到$u(x_{N-1})$进行单步迭代，可解出所有$u(x_{i})$：
+$$
+\left\{
+	\begin{aligned}
+	u(x_{i+1}) &= u(x_i) + \frac {\Delta x}{2} (K_1 + K_2) \\
+	K_1 &= f(x_i, u(x_i)) \\
+	K_2 &= f(x_i + \Delta x, u(x_i)+\Delta x K_1)
+	\end{aligned}
+\right.
+$$
+
+
+#### 四阶Runge-Kutta法（最常用）
+
+$$
+\left\{
+	\begin{aligned}
+	u(x_{i+1}) &= u(x_i) + \frac {\Delta x}{6} (K_1 + 2K_2 + 2K_3 + K_4) \\
+	K_1 &= f(x_i, u(x_i)) \\
+	K_2 &= f(x_i + \frac{\Delta x}{2}, u(x_i)+\frac{\Delta x}{2} K_1) \\
+	K_3 &= f(x_i + \frac{\Delta x}{2}, u(x_i)+\frac{\Delta x}{2} K_2) \\
+	K_4 &= f(x_i + \Delta x, u(x_i)+\Delta x K_3)
+	\end{aligned}
+\right.
+$$
 
 
 
+#### n阶Runge-Kutta法
 
 
 
+<img src="https://my-picture-1311448338.file.myqcloud.com/img/v2-f910858c15413bea8fca740bc906bfa6_r.jpg" alt="img" style="zoom:60%;" />
 
 
 
+## 二阶常微分方程
 
 
+
+## 一阶偏微分方程
+
+
+
+## 一阶随机常微分方程
 
 
 
